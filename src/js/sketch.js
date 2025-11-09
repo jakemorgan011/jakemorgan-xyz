@@ -302,7 +302,7 @@ let sketch_pulsar = function(p){
   let pulsar;
   let c = p.color(251,241,253,0);
   p.setup = function(){
-    let a = p.createA('src/gallery/gallery.html','jake morgan - gallery');
+    let a = p.createA('gallery.html','jake morgan - gallery');
     a.style('background',c);
     a.style('text-decoration','line-underneath');
     a.style('color','black');
@@ -367,6 +367,146 @@ let sketch_pulsar = function(p){
   }
 }
 
+let sketch_profile = function(p){
+  let c = p.color(255,255,255,0);
+  let img;
+  // default vertex shader.
+  let vertex_shader = `
+  attribute vec3 aPosition;
+  attribute vec2 aTexCoord;
+
+  uniform mat4 uModelViewMatrix;
+  uniform mat4 uProjectionMatrix;
+
+  varying vec2 vTexCoord;
+  
+  void main(){
+    vTexCoord = aTexCoord;
+    gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aPosition, 1.0);
+  }
+  `;
+
+  let fragment_shader = `
+  precision mediump float;
+  
+  uniform sampler2D uTexture;
+  uniform vec2 resolution;
+  uniform float pixelSize;
+  varying vec2 vTexCoord;
+
+  void main(){
+    // this pixelated the texture on the geometry.
+    //vec2 uv = vTexCoord;
+    //float dx = pixelSize/resolution.x;
+    //float dy = pixelSize/resolution.y;
+    //vec2 pixelatedUV = vec2(dx * floor(uv.x/dx), dy * floor(uv.y/dy));
+    vec2 pixelCoord = floor(vTexCoord * resolution /pixelSize) * pixelSize / resolution;
+    
+    vec4 color = texture2D(uTexture, pixelCoord);
+
+    gl_FragColor = color;
+  }
+  `;
+  let shader;
+  let pg;
+  let pixelSize = 3;
+  p.preload = function(){
+    img = p.loadImage('src/assets/me.jpg');
+  }
+  p.setup = function(){
+    let a = p.createA('https://publicservices.bandcamp.com/album/love-songs','bio','_blank');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
+    p.createCanvas(300,300,p.WEBGL);
+    p.angleMode(p.DEGREES);
+    p.normalMaterial();
+    a.position(75,150);
+    shader = p.createShader(vertex_shader, fragment_shader);
+    pg = p.createGraphics(p.width,p.height, p.WEBGL);
+    p.noStroke();
+  };
+  p.draw = function(){
+    pg.background(252,252,255);
+    //box
+    pg.push();
+    pg.noStroke();
+    pg.translate(0,0,0);
+    pg.rotateX(p.frameCount * 0.01);
+    pg.rotateY(p.frameCount * 0.01);
+    pg.rotateZ(p.frameCount * 0.01);
+    pg.texture(img);
+    pg.box(75,75,75);
+    pg.pop();
+    
+    p.shader(shader);
+    shader.setUniform('uTexture', pg);
+    shader.setUniform('resolution', [p.width, p.height]);
+    shader.setUniform('pixelSize', pixelSize);
+
+    p.quad(
+      -p.width/2,-p.height/2,
+      p.width/2,-p.height/2,
+      p.width/2,p.height/2,
+      -p.width/2,p.height/2
+    );
+  }
+  p.rotateWithFrameCount = function(offset){
+    p.rotateZ(p.frameCount - offset);
+    p.rotateY(p.frameCount - offset);
+    p.rotateX(p.frameCount - offset);
+  }
+}
+
+let sketch_stasis = function(p){
+  let obj;
+  let c = p.color(255,255,255,0);
+  let toon_shader;
+  let l_pos = [20,-2,0.2];
+  p.setup = function(){
+    let a = p.createA('dimensionality.html','dimensionality.html');
+    a.style('background',c);
+    a.style('text-decoration','line-underneath');
+    a.style('color','black');
+    a.style('font-size','15px');
+    p.createCanvas(600,600,p.WEBGL);
+    a.position(75,150);
+    p.angleMode(p.DEGREES);
+    p.noStroke();
+    //p.normalMaterial();
+  };
+  p.preload = function(){
+    toon_shader = p.loadShader('src/glsl/toon.vert', 'src/glsl/toon.frag');
+    obj = p.loadModel('src/assets/spiky.obj');
+  }
+  
+  p.draw = function(){
+    p.shader(toon_shader);
+    l_pos[0] = 100;
+    //l_pos[0] = 2000 * p.sin(p.millis() / 10000);
+    l_pos[2] = 5000;
+    l_pos[1] = 200;
+
+    toon_shader.setUniform('uLightPosition',l_pos);
+    
+    p.background(252,252,255);
+    p.push();
+    p.translate(0,0,0);
+    p.rotateWithFrameCount(0);
+    p.rotateZ(180);
+    p.scale(90.0); // change this to scale with screen size for proper displays.
+    p.model(obj);
+    p.pop();
+  }
+  p.rotateWithFrameCount = function(offset){
+    p.rotateZ((p.frameCount - offset)*0.06);
+    p.rotateY((p.frameCount - offset)*0.02);
+    p.rotateX((p.frameCount - offset)*0.3);
+  }
+}
+
+
 function calcAspect(){
 }
 
@@ -375,3 +515,5 @@ let horse_p5 = new p5(sketch_horse, 'canvas-container-horse');
 let cube_p5 = new p5(sketch_cube, 'canvas-container-cube');
 let shader_p5 = new p5(sketch_shader, 'canvas-container-shader');
 let pulsar_p5 = new p5(sketch_pulsar, 'canvas-container-pulsar');
+let profile_p5 = new p5(sketch_profile, 'canvas-container-profile');
+let stasis_p5 = new p5(sketch_stasis, 'canvas-container-stasis');
